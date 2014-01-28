@@ -90,6 +90,7 @@ public:
 
 		loopCount = 0;
 		loopsPerEvent = UPDATES_PER_SECOND / 2;
+		longGestureInProgress = false;
 	}
 	// onOrientationData() is called whenever the Myo device provides its current orientation, which is represented
 	// as a quaternion.
@@ -134,6 +135,7 @@ public:
 	int loopCount;
 	int loopsPerEvent;
 	bool waitedBeforeStart;
+	bool longGestureInProgress;
 
 	void ProcessEvent()
 	{
@@ -157,6 +159,8 @@ public:
 			loopCount = 0;
 			return;
 		}
+
+		longGestureInProgress = true;
 
 		//Perform event handling here
 		if(currentPose == myo::Pose::fingers_spread)
@@ -231,11 +235,6 @@ public:
 			//Send data to XBMC
 			if(state == MENU)
 				sendToXBMC(selectString);
-			else if(state == PLAYBACK)
-			{
-				std::cout << "Sending Play/Pause" << std::endl;
-				xbmcPlayPause();
-			}
 		}
 
 		else if ( pose == myo::Pose::wave_in )
@@ -285,10 +284,15 @@ public:
 		}
 		else if ( pose == myo::Pose::none )
 		{
-			if(previousPose == myo::Pose::fist)
+			if(previousPose == myo::Pose::fist && state == PLAYBACK && !longGestureInProgress)
 			{
-
+				std::cout << "PLAY/PAUSE" << std::endl;
+				xbmcPlayPause();
 			}
+
+			//We are at a "none" pose, a gesture can no longer be in progress
+			if(longGestureInProgress)
+				longGestureInProgress = false;
 		}
 	}
 
