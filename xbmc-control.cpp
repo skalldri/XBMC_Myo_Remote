@@ -58,6 +58,9 @@ const std::string downString = "{\"jsonrpc\":\"2.0\",\"method\":\"Input.Down\",\
 const std::string rightString = "{\"jsonrpc\":\"2.0\",\"method\":\"Input.Right\",\"id\":\"NULL\"}";
 const std::string backString = "{\"jsonrpc\":\"2.0\",\"method\":\"Input.Back\",\"id\":\"NULL\"}";
 const std::string getCurrentWindow = "{\"jsonrpc\":\"2.0\",\"method\":\"XBMC.GetInfoLabels\",\"params\":{\"labels\":[\"System.CurrentWindow\"]},\"id\":\"NULL\"}";
+const std::string volumeUp = "{\"jsonrpc\":\"2.0\",\"method\":\"Application.SetVolume\",\"params\":{\"volume\":\"increment\"},\"id\":\"NULL\"}";
+const std::string volumeDown = "{\"jsonrpc\":\"2.0\",\"method\":\"Application.SetVolume\",\"params\":{\"volume\":\"decrement\"},\"id\":\"NULL\"}";
+
 
 // Classes that inherit from myo::DeviceListener can be used to receive events from Myo devices. DeviceListener
 // provides several virtual functions for handling different kinds of events. If you do not override an event, the
@@ -81,6 +84,10 @@ public:
 		world_x = 0.0;
 		world_y = 0.0;
 		world_z = 0.0;
+
+		start_roll = 0.0;
+		start_pitch = 0.0;
+		start_yaw = 0.0;
 		
 		previousPose = myo::Pose::none;
 		currentPose = myo::Pose::none;
@@ -160,8 +167,6 @@ public:
 			return;
 		}
 
-		longGestureInProgress = true;
-
 		//Perform event handling here
 		if(currentPose == myo::Pose::fingers_spread)
 		{
@@ -196,7 +201,24 @@ public:
 				sendToXBMC(upString);
 			}
 		}
+		else if ( currentPose == myo::Pose::fist && state == PLAYBACK)
+		{
+			//Volume control event
+			if(start_roll - roll < -0.3)
+			{
+				std::cout << "VOLUME DOWN" << std::endl;
+				sendToXBMC(volumeDown);
+			}
+			else if(start_roll - roll > 0.3)
+			{
+				std::cout << "VOLUME UP" << std::endl;
+				sendToXBMC(volumeUp);
+			}
 
+			std::cout << start_roll - roll << std::endl;
+		}
+
+		longGestureInProgress = true;
 		loopCount = 0;
 	}
 
@@ -229,14 +251,16 @@ public:
 			//Send data to XBMC
 			sendToXBMC(backString);
 		}
-
 		else if (pose == myo::Pose::fist) 
 		{ 
 			//Send data to XBMC
 			if(state == MENU)
 				sendToXBMC(selectString);
-		}
 
+			//Register the starting position for the roll axis in case the user holds down their fist to initiate a volume change gesture
+			else if(state == PLAYBACK)
+				start_roll = roll;
+		}
 		else if ( pose == myo::Pose::wave_in )
 		{
 			if(state == MENU)
@@ -259,7 +283,6 @@ public:
 				xbmcPrev();
 			}
 		}
-
 		else if ( pose == myo::Pose::wave_out )
 		{
 			if(state == MENU)
