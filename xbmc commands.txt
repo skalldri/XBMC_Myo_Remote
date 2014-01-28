@@ -1,0 +1,4 @@
+{"jsonrpc":"2.0","method":"Input.Select","id":"NULL"}
+{"jsonrpc":"2.0","method":"Input.Left","id":"NULL"}
+{"jsonrpc":"2.0","method":"Input.Right","id":"NULL"}
+{"jsonrpc":"2.0","method":"Input.Back","id":"NULL"}
